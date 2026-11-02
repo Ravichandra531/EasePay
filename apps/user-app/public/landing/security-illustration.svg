@@ -1,0 +1,33 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wash" x1="182" y1="120" x2="1040" y2="820" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2E89FF" stop-opacity="0.14"/>
+      <stop offset="0.55" stop-color="#10B981" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#2E89FF" stop-opacity="0.06"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="440" y1="210" x2="760" y2="690" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2E89FF"/>
+      <stop offset="1" stop-color="#1D6FE0"/>
+    </linearGradient>
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+  </defs>
+
+  <path d="M233 148C397 41 613 31 785 114C953 194 1101 360 1107 530C1113 697 1000 809 839 854C657 905 462 899 315 817C147 725 69 541 95 385C115 269 152 201 233 148Z" fill="url(#wash)"/>
+  <circle cx="280" cy="650" r="150" fill="#2E89FF" fill-opacity="0.10" filter="url(#blur)"/>
+  <circle cx="960" cy="300" r="160" fill="#10B981" fill-opacity="0.10" filter="url(#blur)"/>
+
+  <!-- shield -->
+  <path d="M600 206C664 252 728 270 792 286V474C792 607 702 706 600 736C498 706 408 607 408 474V286C472 270 536 252 600 206Z" fill="url(#shield)"/>
+  <path d="M600 252C651 285 704 301 756 314V468C756 578 680 655 600 678C520 655 444 578 444 468V314C496 301 549 285 600 252Z" fill="#FFFFFF" fill-opacity="0.22"/>
+
+  <!-- check -->
+  <path d="M535 472L579 516L680 408" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- lock dots -->
+  <circle cx="420" cy="356" r="10" fill="#0B1220" fill-opacity="0.20"/>
+  <circle cx="780" cy="356" r="10" fill="#0B1220" fill-opacity="0.18"/>
+  <circle cx="420" cy="596" r="10" fill="#0B1220" fill-opacity="0.16"/>
+  <circle cx="780" cy="596" r="10" fill="#0B1220" fill-opacity="0.14"/>
+</svg>

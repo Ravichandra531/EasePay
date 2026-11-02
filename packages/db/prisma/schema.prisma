@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int                 @id @default(autoincrement())
+  email             String?             @unique
+  name              String?
+  number            String              @unique
+  phoneVerifiedAt   DateTime?
+  phoneVerificationProvider String?
+  password          String
+  merchant          Merchant?
+  bankAccounts      BankAccount[]
+  withdrawals       Withdrawal[]
+  notifications     Notification[]
+  balance           Balance?
+  transactions      OnRampTransaction[]
+  sentTransfers     P2PTransaction[]    @relation("SentTransfers")
+  receivedTransfers P2PTransaction[]    @relation("ReceivedTransfers")
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model Merchant {
+  id          Int     @id @default(autoincrement())
+  email       String  @unique
+  name        String?
+  ownerId     Int? @unique
+  owner       User? @relation(fields: [ownerId], references: [id])
+  slug        String @unique @default(cuid())
+  description String @default("")
+  category    String @default("Other")
+  payments    P2PTransaction[]
+  createdAt   DateTime @default(now())
+  auth_type   AuthType
+}
+
+model OnRampTransaction{
+  id          Int     @id @default(autoincrement())
+  status      OnRampStatus
+  token       String  @unique
+  mode        String @default("sandbox")
+  providerOrderId String? @unique
+  providerPaymentId String? @unique
+  provider    String
+  amount      Int
+  startTime   DateTime
+  userId      Int
+  user        User    @relation(fields:[userId],references:[id])
+  @@index([userId, startTime])
+}
+
+model Balance {
+  id      Int  @id @default(autoincrement())
+  userId  Int  @unique
+  amount  Int
+  realAmount Int @default(0)
+  locked  Int
+  user    User @relation(fields: [userId], references: [id])
+}
+
+model P2PTransaction {
+  merchantId Int?
+  merchant Merchant? @relation(fields: [merchantId], references: [id])
+  requestId  String?  @unique
+  id         Int      @id @default(autoincrement())
+  amount     Int
+  timestamp  DateTime @default(now())
+  fromUserId Int
+  toUserId   Int
+  fromUser   User     @relation("SentTransfers", fields: [fromUserId], references: [id])
+  toUser     User     @relation("ReceivedTransfers", fields: [toUserId], references: [id])
+  @@index([fromUserId, timestamp])
+  @@index([toUserId, timestamp])
+}
+
+
+enum OnRampStatus{
+  Success
+  Failure
+  Processing
+}
+
+
+enum AuthType {
+  Credentials
+  Google
+  Github
+}
+model BankAccount {
+  id String @id @default(cuid())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  holder String
+  ifsc String
+  last4 String
+  fingerprint String
+  encryptedAccount String
+  mode String
+  providerFundId String?
+  withdrawals Withdrawal[]
+  createdAt DateTime @default(now())
+  @@unique([userId, fingerprint, mode])
+}
+model Withdrawal {
+  id String @id @default(uuid())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  bankAccountId String
+  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id])
+  amount Int
+  mode String
+  status String @default("Processing")
+  providerPayoutId String? @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId, createdAt])
+}
+model Notification {
+  id String @id @default(cuid())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  message String
+  link String
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
+}
+
+model PhoneVerification {
+  id String @id @default(cuid())
+  phone String
+  purpose String
+  provider String
+  sessionHash String
+  providerSid String?
+  codeHash String?
+  attempts Int @default(0)
+  sentAt DateTime?
+  verifiedAt DateTime?
+  consumedAt DateTime?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([phone, purpose, createdAt])
+  @@index([expiresAt])
+}
+model AuthRateLimit {
+  key String @id
+  count Int @default(0)
+  expiresAt DateTime
+  @@index([expiresAt])
+}
