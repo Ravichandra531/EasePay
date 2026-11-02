@@ -1,6 +1,6 @@
 # EasePay
 
-A full-stack wallet and merchant payments application by [Ravichandra](https://x.com/1Ravichandra5), built from the 100xDevs Paytm project tracks. Personal wallets, merchant QR checkout, bank withdrawals, and phone authentication share a responsive web application.
+A full-stack wallet and merchant payments application . Personal wallets, merchant QR checkout, bank withdrawals, and phone authentication share a responsive web application.
 
 **Stack:** Next.js 16 · React 19 · TypeScript · Tailwind CSS · NextAuth · Prisma 5 · PostgreSQL/Neon · Express · pnpm/Turborepo · Docker · GitHub Actions.
 
