@@ -623,7 +623,7 @@ button:disabled {
   }
 }
 
-/* A shared visual language for sign-in, signup, and phone verification. */
+/* A shared visual language for sign-in, signup, and email verification. */
 .auth-page {
   min-height: 100svh;
   display: grid;

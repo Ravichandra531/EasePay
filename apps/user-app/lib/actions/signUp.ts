@@ -4,11 +4,10 @@ import { prisma, Prisma } from "@repo/db";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { signupSchema } from "../validation";
-import { consumePhoneProof, phoneSessionHash } from "../phone-verification";
-import { OtpError } from "../otp-provider";
+import { verifyEmailCode, EmailOtpError } from "../supabase-email";
 
 export async function signUp(input: {
-  phoneVerificationId?: string;
+  emailCode?: string;
   accountType?: "personal" | "merchant";
   businessName?: string;
   name?: string;
@@ -30,32 +29,19 @@ export async function signUp(input: {
     return { success: false, message: "Enter your business name" };
 
   try {
-    if (
-      !input.phoneVerificationId ||
-      !/^[a-z0-9]{10,100}$/i.test(input.phoneVerificationId)
-    )
-      return {
-        success: false,
-        message: "Verify your phone number before creating an account.",
-      };
-    const sessionHash = await phoneSessionHash();
+    // Supabase consumes the one-time code before any wallet account is created.
+    await verifyEmailCode(email, input.emailCode);
     const hashedPassword = await bcrypt.hash(password, 10);
     await prisma.$transaction(async (tx) => {
-      const provider = await consumePhoneProof(
-        tx,
-        input.phoneVerificationId!,
-        phone,
-        "signup",
-        sessionHash,
-      );
       const user = await tx.user.create({
         data: {
           name: name ? name : null,
           email,
           number: phone,
           password: hashedPassword,
-          phoneVerifiedAt: provider === "twilio" ? new Date() : null,
-          phoneVerificationProvider: provider,
+          // Email verification does not establish ownership of the phone number.
+          phoneVerifiedAt: null,
+          phoneVerificationProvider: null,
         },
       });
 
@@ -80,7 +66,8 @@ export async function signUp(input: {
 
     return { success: true };
   } catch (e: unknown) {
-    if (e instanceof OtpError) return { success: false, message: e.message };
+    if (e instanceof EmailOtpError)
+      return { success: false, message: e.message };
     if (
       e instanceof Prisma.PrismaClientKnownRequestError &&
       e.code === "P2002"

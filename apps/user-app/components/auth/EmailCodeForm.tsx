@@ -1,15 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
-export type PhoneChallenge = {
+export type EmailChallenge = {
   challengeId: string;
   expiresAt: string;
   resendAfter: number;
-  delivery: "sms" | "development";
 };
-export function PhoneCodeForm({
+export function EmailCodeForm({
   challenge,
-  phone,
+  email,
   busy,
   error,
   onConfirm,
@@ -17,8 +16,8 @@ export function PhoneCodeForm({
   onBack,
   signup = false,
 }: {
-  challenge: PhoneChallenge;
-  phone: string;
+  challenge: EmailChallenge;
+  email: string;
   busy: boolean;
   error: string;
   onConfirm: (code: string) => void;
@@ -45,26 +44,18 @@ export function PhoneCodeForm({
         <span>1</span>
         <div />
         <span className="active">2</span>
-        <p>{signup ? "Verify your phone" : "Your sign-in code"}</p>
+        <p>{signup ? "Verify your email" : "Your sign-in code"}</p>
       </div>
       <div className="auth-icon">
-        <Icon name="smartphone" size={25} />
+        <Icon name="mail" size={25} />
       </div>
       <p className="auth-eyebrow">One last little step</p>
       <h2 className="auth-heading">Is that you?</h2>
       <p className="auth-description">
-        {challenge.delivery === "sms"
-          ? "Enter the six-digit code sent to"
-          : "Verify the development code for"}
+        Enter the six-digit code sent to
         <br />
-        <strong className="text-[#192a3b] font-medium">+91 {phone}</strong>
+        <strong className="text-[#192a3b] font-medium">{email}</strong>
       </p>
-      {challenge.delivery === "development" && (
-        <p className="auth-dev-notice">
-          No SMS was sent. The development code is in the terminal running
-          EasePay. Development codes cannot be used in production.
-        </p>
-      )}
       <form
         className="auth-form"
         onSubmit={(e) => {
@@ -72,11 +63,11 @@ export function PhoneCodeForm({
           onConfirm(code);
         }}
       >
-        <label htmlFor="phone-code" className="auth-label">
+        <label htmlFor="email-code" className="auth-label">
           Verification code
         </label>
         <input
-          id="phone-code"
+          id="email-code"
           className="auth-input auth-code"
           inputMode="numeric"
           autoComplete="one-time-code"
@@ -95,7 +86,7 @@ export function PhoneCodeForm({
         <p className="auth-help">
           {expired
             ? "This code expired. Request a new one below."
-            : "Codes expire after 10 minutes. Never share yours."}
+            : "Use your most recent code. Never share it."}
         </p>
         {error && (
           <p className="auth-error" role="alert">
@@ -122,7 +113,7 @@ export function PhoneCodeForm({
       </div>
       <button className="auth-back" onClick={onBack} disabled={busy}>
         <Icon name="arrow-left" size={14} />
-        Change phone number
+        Change email address
       </button>
     </>
   );

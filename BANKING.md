@@ -57,7 +57,7 @@ Live banking cannot be activated or verified without approved provider accounts 
 
 After testing the application and provider integration, configure matching `rzp_live_` Checkout and RazorpayX credentials, the live funding account, `BANK_SANDBOX_ENABLED=false`, and `LIVE_PAYMENTS_ENABLED=true`. Existing demo/test funds remain ineligible for real payouts. Only captured live deposits and transfers of those funds increase `Balance.realAmount`.
 
-Provider approval is also required for your intended wallet/payment use case. Implementing these API calls does not itself make EasePay a regulated bank or authorize stored-value services. Merchant Google OAuth, automatic scheduled settlement, chargeback/refund accounting, KYC onboarding, and provider reconciliation jobs are not included. Personal and merchant signup require phone verification. Twilio verifies phone ownership when configured; the console adapter only simulates verification for local development. Email ownership is not verified. See [AUTH.md](AUTH.md).
+Provider approval is also required for your intended wallet/payment use case. Implementing these API calls does not itself make EasePay a regulated bank or authorize stored-value services. Merchant Google OAuth, automatic scheduled settlement, chargeback/refund accounting, KYC onboarding, and provider reconciliation jobs are not included. Personal and merchant signup require Supabase email verification. Phone numbers remain wallet identifiers but are not verified by the email OTP flow. See [AUTH.md](AUTH.md).
 
 ## Storage and recovery
 

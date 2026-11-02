@@ -1,5 +1,9 @@
 // Lucide icon subset. ISC license: public/licenses/lucide.txt
 export const iconNodes = {
+  mail: [
+    ["rect", { x: "2", y: "4", width: "20", height: "16", rx: "2", key: "mail-box" }],
+    ["path", { d: "m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7", key: "mail-flap" }],
+  ],
   "arrow-up-right": [
     [
       "path",

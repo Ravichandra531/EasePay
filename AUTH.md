@@ -1,45 +1,48 @@
-# EasePay phone authentication
+# EasePay email authentication
 
-Login and signup share the landing page design. Login supports either a phone code or an existing password. Personal and merchant signup require a successful phone challenge before creating the account. OTP login is an alternative to password login, not mandatory two-factor authentication.
+Login and signup use Supabase email OTP. NextAuth continues to issue the wallet session, and PostgreSQL/Neon continues to store users, balances, and transactions. Password sign-in remains available. Email OTP is an alternative sign-in method, not mandatory two-factor authentication.
 
-The selected Neon branch (`br-wispy-flower-ahvnwwju`, database `neondb`) already has the wallet, merchant/banking, and phone-verification migrations applied. Existing users and balances were preserved. New database installations should run `pnpm db:migrate` after configuring the same database URL in the app and Prisma environments.
+## Environment
 
-## Local development
-
-This workspace currently uses these settings in `apps/user-app/.env`:
+Set these in `apps/user-app/.env`, Vercel's deployment environment, or `.env.docker`:
 
 ```dotenv
-OTP_PROVIDER=console
-ALLOW_DEV_OTP=true
-BANK_SANDBOX_ENABLED=true
-LIVE_PAYMENTS_ENABLED=false
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
-`OTP_SECRET` is generated locally and must stay private. Run `npm run dev` from the project root and open [login](http://localhost:3001/login) or [signup](http://localhost:3001/signup). When requesting a code, read the random six-digit code from the user-app terminal line labeled `EasePay DEVELOPMENT OTP`. No SMS is sent; the verification screen states this. Never share the code or terminal logs.
+This workspace's ignored local `.env` is configured with the supplied Supabase project. The publishable key is sufficient: no service-role key is needed. Server-only aliases `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are also supported and take precedence. The server reads configuration at request time for container deployment.
 
-Restart the dev server after environment or Prisma-client changes. The console adapter only runs under `NODE_ENV=development` with the explicit flags above. It is rejected by a production build at runtime and when live payments are enabled. Console verification does not set `User.phoneVerifiedAt` or prove ownership of a real phone number.
+Keep `DATABASE_URL`, `NEXTAUTH_SECRET` (or the existing `JWT_SECRET`), `NEXTAUTH_URL`, `APP_URL`, and `BANK_ACCOUNT_ENCRYPTION_KEY` configured as before. No wallet schema migration is needed for email OTP. Historical phone-verification tables/data are retained; Twilio and console OTP adapters are no longer used.
 
-## Real SMS through Twilio Verify
+## Required Supabase dashboard configuration
 
-Create a Twilio Verify service with six-digit SMS codes, then configure these server-only variables in `apps/user-app/.env` or your deployment environment:
+Open the supplied project's [Authentication settings](https://supabase.com/dashboard/project/qeerodplkmmjujmyuqoh/auth/providers).
 
-```dotenv
-OTP_PROVIDER=twilio
-ALLOW_DEV_OTP=false
-OTP_SECRET=<separate-random-secret-of-at-least-32-bytes>
-TWILIO_VERIFY_SERVICE_SID=<VA-service-SID>
-TWILIO_API_KEY_SID=<API-key-SID>
-TWILIO_API_KEY_SECRET=<API-key-secret>
-```
+1. Enable the Email provider and allow new users. Existing wallet accounts are enrolled in Supabase when first requesting an email code.
+2. Set email OTP length to **6 digits**, expiry to **600 seconds**, and resend interval to at least **60 seconds**. The app's code-entry screen expires after ten minutes.
+3. In Authentication > Email Templates, include the code in both **Confirm signup** and **Magic Link** templates. New and returning Supabase users may receive different templates:
 
-Alternatively, leave both API-key variables unset and use `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`. Use a matched credential pair. Do not paste keys into chat, commit environment files, or expose them through `NEXT_PUBLIC_` variables. Ensure the provider account can deliver SMS to India and satisfies its account, destination, and sender requirements. Trial accounts may limit destinations. Restart the application after configuration.
+   ```html
+   <h2>Your EasePay verification code</h2>
+   <p>Enter this code in EasePay:</p>
+   <p><strong>{{ .Token }}</strong></p>
+   <p>If you did not request this code, you can ignore this email.</p>
+   ```
 
-The app accepts ten-digit Indian numbers and sends them to Twilio in `+91` format. Twilio handles delivery and verification; no SMS credentials are configured in this workspace, so actual SMS delivery has not been tested. See [Twilio Verify](https://www.twilio.com/docs/verify/api) and [verification checks](https://www.twilio.com/docs/verify/api/verification-check).
+4. Configure custom SMTP for public users. Supabase's built-in sender delivers only to project organization team members and is limited to two emails per hour. SMTP credentials belong in Supabase, not the browser or this repository.
+5. Set the Site URL to your deployed EasePay HTTPS URL and configure provider email rate limits for the intended traffic. The code-entry flow does not require a callback URL or magic-link redirect.
+
+See [Supabase email OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless), [custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp), and [rate limits](https://supabase.com/docs/guides/auth/rate-limits).
 
 ## Verification behavior
 
-Challenges expire after ten minutes, allow at most five attempts, and require sixty seconds between sends. Send quotas are five per phone and fifteen per client per hourly bucket. Client-address limits assume a trusted reverse proxy that replaces `x-forwarded-for`; phone quotas are also enforced independently. Configure provider-side fraud controls and destination limits before public deployment.
+The server calls Supabase's `/auth/v1/otp` and `/auth/v1/verify` endpoints with the publishable key. It verifies the returned confirmed email matches the requested address. Codes and Supabase access/refresh tokens are never returned to the browser or stored in the NextAuth session. Supabase enforces code validity, expiry, single use, and rate limits; the UI also provides a sixty-second resend countdown. There are no fixed, console, or production bypass codes.
 
-Challenges are bound to an HttpOnly browser cookie, phone number, purpose, and provider. Successful proofs are consumed once, atomically with account creation or login. Local codes are stored as keyed hashes; codes are never returned in an HTTP response. Twilio verification stamps phone ownership, including when an existing user first logs in with a real code. Existing password login continues to work.
+Signup verifies the code before creating the user, zero balance, and optional merchant in a database transaction. If account creation fails after the code is consumed, request a new code. Login maps the verified email to an existing wallet account; it never creates a wallet automatically. Users must sign up first. Email changes require the current password and a code sent to the new address.
 
-Expired challenges and rate-limit rows are retained; schedule database cleanup based on `expiresAt` for a long-running deployment. Unit/UI tests mock provider and database boundaries. They cover the OTP flow and protections but do not establish real SMS delivery or live concurrency behavior.
+Phone numbers remain required for wallet transfers and must be unique, but email OTP does not prove phone ownership or set `phoneVerifiedAt`. Existing users, balances, and payment mode are preserved. This integration does not move wallet data into Supabase.
+
+## Validation
+
+Unit/UI tests mock Supabase and database boundaries to check valid/invalid codes, mismatched identities, signup gating, session identity, email changes, password fallback, and error states. Actual email delivery requires the dashboard configuration above and a test with an address you control; it cannot be established by a successful build.

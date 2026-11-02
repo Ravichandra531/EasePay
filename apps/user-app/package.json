@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev --webpack --port 3001",
     "build": "next build --webpack",
+    "vercel-build": "pnpm -w run vercel-build",
     "start": "next start --port 3001",
     "lint": "eslint --max-warnings 0",
     "check-types": "next typegen && tsc --noEmit",

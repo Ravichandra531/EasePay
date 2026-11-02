@@ -4,7 +4,7 @@ const secret = () => randomBytes(32).toString("hex");
 try {
   writeFileSync(
     ".env.docker",
-    `# Local Docker configuration. Never commit this file.\nAPP_URL=http://localhost:3001\nNEXTAUTH_SECRET=${secret()}\nOTP_SECRET=${secret()}\nBANK_ACCOUNT_ENCRYPTION_KEY=${randomBytes(32).toString("base64")}\nWEBHOOK_SECRET=${secret()}\n`,
+    `# Local Docker configuration. Never commit this file.\nAPP_URL=http://localhost:3001\nNEXTAUTH_SECRET=${secret()}\nBANK_ACCOUNT_ENCRYPTION_KEY=${randomBytes(32).toString("base64")}\nWEBHOOK_SECRET=${secret()}\n`,
     { flag: "wx", mode: 0o600 },
   );
   console.log(

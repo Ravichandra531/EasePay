@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { signupSchema } from "@/lib/validation";
 import { signUp } from "@/lib/actions/signUp";
-import { requestPhoneOtp, verifySignupOtp } from "@/lib/actions/phoneOtp";
+import { requestEmailOtp } from "@/lib/actions/emailOtp";
 import { AuthShell } from "@/components/auth/AuthShell";
 import {
-  PhoneCodeForm,
-  type PhoneChallenge,
-} from "@/components/auth/PhoneCodeForm";
+  EmailCodeForm,
+  type EmailChallenge,
+} from "@/components/auth/EmailCodeForm";
 import { Icon } from "@/components/ui/Icon";
 export default function SignupPage() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function SignupPage() {
     [phone, setPhone] = useState(""),
     [password, setPassword] = useState(""),
     [showPassword, setShowPassword] = useState(false),
-    [challenge, setChallenge] = useState<PhoneChallenge | null>(null),
+    [challenge, setChallenge] = useState<EmailChallenge | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const lock = useRef(false);
@@ -43,7 +43,7 @@ export default function SignupPage() {
     setBusy(true);
     setError("");
     try {
-      const result = await requestPhoneOtp(phone, "signup");
+      const result = await requestEmailOtp(email);
       if (!result.success) setError(result.message);
       else setChallenge(result);
     } catch {
@@ -59,15 +59,7 @@ export default function SignupPage() {
     setBusy(true);
     setError("");
     try {
-      const checked = await verifySignupOtp(challenge.challengeId, code);
-      if (!checked.success) {
-        setError(checked.message);
-        return;
-      }
-      const created = await signUp({
-        ...input,
-        phoneVerificationId: checked.challengeId,
-      });
+      const created = await signUp({ ...input, emailCode: code });
       if (!created.success) {
         setError(created.message);
         return;
@@ -95,10 +87,10 @@ export default function SignupPage() {
   return (
     <AuthShell signup>
       {challenge ? (
-        <PhoneCodeForm
+        <EmailCodeForm
           signup
           challenge={challenge}
-          phone={phone}
+          email={email}
           busy={busy}
           error={error}
           onConfirm={complete}
@@ -114,7 +106,7 @@ export default function SignupPage() {
             <span className="active">1</span>
             <div />
             <span>2</span>
-            <p>Your details · then a quick phone check</p>
+            <p>Your details · then a quick email check</p>
           </div>
           <p className="auth-eyebrow">A FRESH START, WITH A LITTLE MORE EASE</p>
           <h2 className="auth-heading">Let’s make it yours.</h2>
@@ -226,7 +218,8 @@ export default function SignupPage() {
                 />
               </div>
               <p className="auth-help">
-                We’ll verify this number with a six-digit code.
+                Your phone number identifies your wallet for transfers. We’ll
+                verify your email with a code.
               </p>
             </div>
             <div>
@@ -279,7 +272,7 @@ export default function SignupPage() {
               </p>
             )}
             <button className="landing-button auth-submit" disabled={busy}>
-              {busy ? "Sending code…" : "Continue to phone verification"}
+              {busy ? "Sending code…" : "Continue to email verification"}
               <Icon name="arrow-right" size={17} />
             </button>
             <p className="auth-help text-center">

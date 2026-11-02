@@ -5,8 +5,8 @@ This diagram documents the implemented app, informed by the two 100xDevs Paytm p
 ```mermaid
 flowchart TB
   Person[Personal or merchant user] --> Web[Next.js web app :3001]
-  Web --> Auth[NextAuth password and phone OTP]
-  Auth --> Verify[Twilio Verify - credentials required]
+  Web --> Auth[NextAuth password and email OTP]
+  Auth --> Verify[Supabase Auth - email OTP]
   Web --> Actions[Server actions and route handlers]
   Actions --> Wallet[Wallet and merchant services]
   Wallet --> Prisma[Prisma transaction layer]
@@ -41,7 +41,7 @@ sequenceDiagram
 
 P2P and merchant wallet transfers run in database transactions. Idempotency keys prevent repeated requests from moving funds twice. Withdrawals reserve funds before contacting the payout provider; confirmed failures and reversals restore them once. Uncertain outcomes retain the reservation pending reconciliation. Demo and real funds are tracked separately.
 
-Bank account details are encrypted with AES-256-GCM. OTP challenges are browser-bound, expire, have attempt/send limits, and are consumed once. The Express demo webhook requires a shared secret; provider webhooks verify a signature and fetch provider status before updating funds.
+Bank account details are encrypted with AES-256-GCM. Supabase verifies single-use email codes and enforces authentication rate limits. Wallet accounts are created only after email verification succeeds. The Express demo webhook requires a shared secret; provider webhooks verify a signature and fetch provider status before updating funds.
 
 There is one Next.js application for personal and merchant experiences, not separate deployed merchant/admin apps. There is no Redis, queue worker, automatic settlement scheduler, or Kubernetes cluster in this implementation.
 

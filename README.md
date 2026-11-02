@@ -9,7 +9,7 @@ A full-stack wallet and merchant payments application . Personal wallets, mercha
 ```mermaid
 flowchart LR
   User[Personal / merchant user] --> Web[Next.js :3001]
-  Web --> Auth[NextAuth + Twilio Verify]
+  Web --> Auth[NextAuth + Supabase email OTP]
   Web --> Services[Wallet / merchant / withdrawal services]
   Services --> Prisma[Prisma transactions]
   Prisma --> DB[(PostgreSQL / Neon)]
@@ -40,7 +40,7 @@ docker compose --env-file .env.docker logs -f web webhook
 docker compose --env-file .env.docker down
 ```
 
-Containers run production builds. Console OTP is deliberately unavailable there: configure Twilio in `.env.docker` for signup/phone login, or use an existing account's password login. For local development codes use `pnpm dev` and [AUTH.md](AUTH.md). No accounts are seeded automatically. This Compose stack uses simulated payments.
+Configure Supabase email OTP in `.env.docker` for signup and code login; see [AUTH.md](AUTH.md). Existing accounts can also use password login. No accounts are seeded automatically. This Compose stack uses simulated payments.
 
 To use Neon, set `DATABASE_URL` in `.env.docker` to your Neon connection string, including its required TLS parameters. The migration job and both apps use that URL. The local database service still starts but is unused. Back up the selected database before deploying schema changes.
 
@@ -151,8 +151,8 @@ Read [BANKING.md](BANKING.md) before configuring provider credentials. Live oper
 
 ## Deploy the web app on Vercel
 
-Import this repository with **Root Directory `.` (repository root)**, **Framework Next.js**, and **Node.js 22.x**. The root `vercel.json` explicitly installs pnpm 9.0.0, generates Prisma, builds only the user app, and selects `apps/user-app/.next` as output. Clear any dashboard overrides that still specify `npm install` or a different output directory. Deploy the Next.js app directly; the Docker Compose stack is for a container host.
+Import this repository with **Root Directory `apps/user-app`**, **Framework Next.js**, and **Node.js 22.x**. Enable **Include source files outside of the Root Directory in the Build Step** so the app can access shared workspace packages. The app's `vercel.json` installs pnpm 9.0.0 dependencies from the repository root, generates Prisma, builds only the user app, and selects `.next` as output. Clear old dashboard overrides for install/build commands and output directory so this file controls them. Next.js is declared in `apps/user-app/package.json`; using the repository root as the Vercel Root Directory causes `NEXT_NO_VERSION`. Deploy the Next.js app directly; the Docker Compose stack is for a container host.
 
-Set `DATABASE_URL` to the Neon TLS connection string and configure `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `APP_URL`, `OTP_SECRET`, and `BANK_ACCOUNT_ENCRYPTION_KEY` as private Vercel environment variables. Both URL variables must use your deployed HTTPS domain. Configure Twilio for real phone authentication; see [AUTH.md](AUTH.md). Configure payment mode and provider keys using [BANKING.md](BANKING.md). Apply database migrations separately with `pnpm db:migrate` before rollout; the build does not modify your database.
+Set `DATABASE_URL` to the Neon TLS connection string and configure `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `APP_URL`, and `BANK_ACCOUNT_ENCRYPTION_KEY` as private Vercel environment variables. Both URL variables must use your deployed HTTPS domain. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for email OTP, then configure Supabase email templates and custom SMTP; see [AUTH.md](AUTH.md). Configure payment mode and provider keys using [BANKING.md](BANKING.md). Apply database migrations separately with `pnpm db:migrate` before rollout; the build does not modify your database.
 
 The Express demo bank webhook is a separate service and is not deployed by this Vercel configuration. Razorpay's signed webhook lives inside Next.js at `/api/webhooks/razorpay`. After changing deployment settings, redeploy without the previous build cache.

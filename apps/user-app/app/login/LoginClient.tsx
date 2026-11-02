@@ -4,23 +4,23 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { safeCallback } from "@/lib/format";
-import { requestPhoneOtp } from "@/lib/actions/phoneOtp";
+import { requestEmailOtp } from "@/lib/actions/emailOtp";
 import { AuthShell } from "@/components/auth/AuthShell";
 import {
-  PhoneCodeForm,
-  type PhoneChallenge,
-} from "@/components/auth/PhoneCodeForm";
+  EmailCodeForm,
+  type EmailChallenge,
+} from "@/components/auth/EmailCodeForm";
 import { Icon } from "@/components/ui/Icon";
 export function LoginClient() {
   const router = useRouter(),
     params = useSearchParams(),
     callback = safeCallback(params.get("callbackUrl"));
   const [method, setMethod] = useState<"otp" | "password">("otp"),
-    [phone, setPhone] = useState(""),
+    [email, setEmail] = useState(""),
     [identifier, setIdentifier] = useState(""),
     [password, setPassword] = useState(""),
     [showPassword, setShowPassword] = useState(false),
-    [challenge, setChallenge] = useState<PhoneChallenge | null>(null),
+    [challenge, setChallenge] = useState<EmailChallenge | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const lock = useRef(false);
@@ -30,7 +30,7 @@ export function LoginClient() {
     setBusy(true);
     setError("");
     try {
-      const result = await requestPhoneOtp(phone, "login");
+      const result = await requestEmailOtp(email);
       if (!result.success) setError(result.message);
       else setChallenge(result);
     } catch {
@@ -48,8 +48,8 @@ export function LoginClient() {
     try {
       const result =
         code && challenge
-          ? await signIn("phone-otp", {
-              challengeId: challenge.challengeId,
+          ? await signIn("email-otp", {
+              email,
               code,
               redirect: false,
               callbackUrl: callback,
@@ -80,9 +80,9 @@ export function LoginClient() {
   return (
     <AuthShell>
       {challenge ? (
-        <PhoneCodeForm
+        <EmailCodeForm
           challenge={challenge}
-          phone={phone}
+          email={email}
           busy={busy}
           error={error}
           onConfirm={login}
@@ -102,7 +102,7 @@ export function LoginClient() {
           <div className="auth-methods" aria-label="Sign-in method">
             {(
               [
-                { id: "otp", label: "Phone code", icon: "smartphone" },
+                { id: "otp", label: "Email code", icon: "mail" },
                 { id: "password", label: "Password", icon: "lock-keyhole" },
               ] as const
             ).map((m) => (
@@ -132,32 +132,23 @@ export function LoginClient() {
           >
             {method === "otp" ? (
               <div>
-                <label htmlFor="login-phone" className="auth-label">
-                  Phone number
+                <label htmlFor="login-email" className="auth-label">
+                  Email address
                 </label>
-                <div className="auth-phone">
-                  <span>
-                    IN <span className="text-[#819ab4] mx-2">|</span> +91
-                  </span>
-                  <input
-                    id="login-phone"
-                    className="auth-input"
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="tel-national"
-                    placeholder="98765 43210"
-                    value={phone}
-                    onChange={(e) =>
-                      setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
-                    }
-                    pattern="[0-9]{10}"
-                    maxLength={10}
-                    required
-                    disabled={busy}
-                  />
-                </div>
+                <input
+                  id="login-email"
+                  className="auth-input"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  maxLength={254}
+                  required
+                  disabled={busy}
+                />
                 <p className="auth-help">
-                  We’ll send a one-time code to the number linked to your
+                  We’ll email a one-time code to the address linked to your
                   wallet.
                 </p>
               </div>

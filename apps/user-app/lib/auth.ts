@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { JWT } from "next-auth/jwt";
 import type { NextAuthOptions, Session } from "next-auth";
-import { loginWithPhoneCode } from "./phone-verification";
+import { verifyEmailCode } from "./supabase-email";
 
 const authSchema = z.object({
   identifier: z.string().trim().min(3).max(100),
@@ -20,19 +20,25 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
   providers: [
     CredentialsProvider({
-      id: "phone-otp",
-      name: "Phone verification code",
+      id: "email-otp",
+      name: "Email verification code",
       credentials: {
-        challengeId: { label: "Verification", type: "text" },
+        email: { label: "Email", type: "email" },
         code: { label: "Code", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.challengeId || !credentials.code) return null;
         try {
-          return await loginWithPhoneCode(
-            credentials.challengeId,
-            credentials.code,
+          const email = await verifyEmailCode(
+            credentials?.email,
+            credentials?.code,
           );
+          const user = await prisma.user.findUnique({ where: { email } });
+          if (!user) return null;
+          return {
+            id: String(user.id),
+            name: user.name ?? "",
+            email: user.email,
+          };
         } catch {
           return null;
         }

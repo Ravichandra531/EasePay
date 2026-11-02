@@ -6,6 +6,7 @@ import { prisma, Prisma } from "@repo/db";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { verifyEmailCode, EmailOtpError } from "../supabase-email";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name cannot be empty").max(100),
@@ -16,6 +17,7 @@ export async function updateProfile(
   name: string,
   email: string,
   password: string,
+  emailCode?: string,
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -45,6 +47,9 @@ export async function updateProfile(
         success: false,
         message: "Enter your current password to save changes",
       };
+    // Email is now a sign-in identity: require ownership before changing it.
+    if (parsed.data.email !== user.email?.toLowerCase())
+      await verifyEmailCode(parsed.data.email, emailCode);
     await prisma.user.update({
       where: { id: Number(session.user.id) },
       data: {
@@ -56,6 +61,8 @@ export async function updateProfile(
     revalidatePath("/dashboard");
     return { success: true, message: "Profile updated successfully" };
   } catch (e: unknown) {
+    if (e instanceof EmailOtpError)
+      return { success: false, message: e.message };
     if (
       e instanceof Prisma.PrismaClientKnownRequestError &&
       e.code === "P2002"

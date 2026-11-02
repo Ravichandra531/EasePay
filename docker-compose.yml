@@ -4,19 +4,13 @@ x-runtime: &runtime
   NEXTAUTH_URL: ${APP_URL:-http://localhost:3001}
   APP_URL: ${APP_URL:-http://localhost:3001}
   NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Run node scripts/setup-docker.mjs first}
-  OTP_SECRET: ${OTP_SECRET:?Run node scripts/setup-docker.mjs first}
   BANK_ACCOUNT_ENCRYPTION_KEY: ${BANK_ACCOUNT_ENCRYPTION_KEY:?Run node scripts/setup-docker.mjs first}
   WEBHOOK_SECRET: ${WEBHOOK_SECRET:?Run node scripts/setup-docker.mjs first}
   PAYMENT_PROVIDER: sandbox
   BANK_SANDBOX_ENABLED: "true"
   LIVE_PAYMENTS_ENABLED: "false"
-  OTP_PROVIDER: twilio
-  ALLOW_DEV_OTP: "false"
-  TWILIO_VERIFY_SERVICE_SID: ${TWILIO_VERIFY_SERVICE_SID:-}
-  TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
-  TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-  TWILIO_API_KEY_SID: ${TWILIO_API_KEY_SID:-}
-  TWILIO_API_KEY_SECRET: ${TWILIO_API_KEY_SECRET:-}
+  NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}
 services:
   db:
     image: postgres:16-bookworm

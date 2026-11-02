@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { requestEmailOtp } from "@/lib/actions/emailOtp";
 import { updateProfile } from "@/lib/actions/updateProfile";
 
 export function ProfileClient({
@@ -17,22 +18,52 @@ export function ProfileClient({
   const [name, setName] = useState(user.name ?? ""),
     [email, setEmail] = useState(user.email ?? ""),
     [password, setPassword] = useState(""),
+    [emailCode, setEmailCode] = useState(""),
+    [sentTo, setSentTo] = useState(""),
+    [resendAt, setResendAt] = useState(0),
     [loading, setLoading] = useState(false),
     [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
       null,
     );
   const router = useRouter(),
     { update } = useSession();
+  const emailChanged = email.trim().toLowerCase() !== user.email?.toLowerCase();
+  async function sendCode() {
+    if (loading) return;
+    setLoading(true);
+    setMessage(null);
+    try {
+      const result = await requestEmailOtp(email);
+      if (result.success) {
+        setSentTo(email.trim().toLowerCase());
+        setEmailCode("");
+        setResendAt(Date.now() + result.resendAfter * 1000);
+        setMessage({
+          ok: true,
+          text: "Verification code sent. Check your new email address.",
+        });
+      } else setMessage({ ok: false, text: result.message });
+    } catch {
+      setMessage({
+        ok: false,
+        text: "Could not send a code. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
     setMessage(null);
     try {
-      const result = await updateProfile(name, email, password);
+      const result = await updateProfile(name, email, password, emailCode);
       setMessage({ ok: result.success, text: result.message });
       if (result.success) {
         setPassword("");
+        setEmailCode("");
+        setSentTo("");
         await update();
         router.refresh();
       }
@@ -89,12 +120,59 @@ export function ProfileClient({
             className="wallet-input"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailCode("");
+              setSentTo("");
+            }}
             autoComplete="email"
             required
             disabled={loading}
           />
         </div>
+        {emailChanged && (
+          <div className="space-y-3">
+            <p className="text-xs text-neutral-500">
+              Verify your new email address before saving it.
+            </p>
+            <button
+              type="button"
+              className="primary-button"
+              disabled={loading}
+              onClick={() => {
+                if (Date.now() < resendAt) {
+                  setMessage({
+                    ok: false,
+                    text: "Please wait 60 seconds before requesting another code.",
+                  });
+                } else void sendCode();
+              }}
+            >
+              {sentTo ? "Resend email code" : "Send email code"}
+            </button>
+            {sentTo === email.trim().toLowerCase() && (
+              <>
+                <label htmlFor="profile-email-code" className="wallet-label">
+                  Email verification code
+                </label>
+                <input
+                  id="profile-email-code"
+                  className="wallet-input"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  required
+                  value={emailCode}
+                  onChange={(e) =>
+                    setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  disabled={loading}
+                />
+              </>
+            )}
+          </div>
+        )}
         <div>
           <label htmlFor="profile-phone" className="wallet-label">
             Phone number

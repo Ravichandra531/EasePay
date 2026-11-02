@@ -81,7 +81,7 @@ export function AuthShell({
                   A little peace of mind.
                 </p>
                 <p className="text-[10px] mt-1 text-[#6180a0]">
-                  Your phone. Your verification code.
+                  Your email. Your verification code.
                 </p>
               </div>
             </div>
