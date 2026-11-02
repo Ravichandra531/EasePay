@@ -1,0 +1,26 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "services": {
+      "app": {
+        "root": ".",
+        "runtime": "container"
+      },
+      "bank-webhook": {
+        "root": "apps/bank-webhook",
+        "framework": "express"
+      },
+      "user-app": {
+        "root": "apps/user-app",
+        "framework": "nextjs"
+      }
+    },
+    "rewrites": [
+      {
+        "source": "/(.*)",
+        "destination": {
+          "service": "app"
+        }
+      }
+    ]
+  }
+  
