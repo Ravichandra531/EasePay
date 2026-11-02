@@ -1,26 +1,7 @@
 {
-    "$schema": "https://openapi.vercel.sh/vercel.json",
-    "services": {
-      "app": {
-        "root": ".",
-        "runtime": "container"
-      },
-      "bank-webhook": {
-        "root": "apps/bank-webhook",
-        "framework": "express"
-      },
-      "user-app": {
-        "root": "apps/user-app",
-        "framework": "nextjs"
-      }
-    },
-    "rewrites": [
-      {
-        "source": "/(.*)",
-        "destination": {
-          "service": "app"
-        }
-      }
-    ]
-  }
-  
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "installCommand": "npx --yes pnpm@9.0.0 install --frozen-lockfile",
+  "buildCommand": "npx --yes pnpm@9.0.0 run vercel-build",
+  "outputDirectory": "apps/user-app/.next"
+}

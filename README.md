@@ -148,3 +148,11 @@ Some chapters require a logged-in course account. The implementation follows the
 ## Banking setup
 
 Read [BANKING.md](BANKING.md) before configuring provider credentials. Live operations have not been tested in this workspace.
+
+## Deploy the web app on Vercel
+
+Import this repository with **Root Directory `.` (repository root)**, **Framework Next.js**, and **Node.js 22.x**. The root `vercel.json` explicitly installs pnpm 9.0.0, generates Prisma, builds only the user app, and selects `apps/user-app/.next` as output. Clear any dashboard overrides that still specify `npm install` or a different output directory. Deploy the Next.js app directly; the Docker Compose stack is for a container host.
+
+Set `DATABASE_URL` to the Neon TLS connection string and configure `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `APP_URL`, `OTP_SECRET`, and `BANK_ACCOUNT_ENCRYPTION_KEY` as private Vercel environment variables. Both URL variables must use your deployed HTTPS domain. Configure Twilio for real phone authentication; see [AUTH.md](AUTH.md). Configure payment mode and provider keys using [BANKING.md](BANKING.md). Apply database migrations separately with `pnpm db:migrate` before rollout; the build does not modify your database.
+
+The Express demo bank webhook is a separate service and is not deployed by this Vercel configuration. Razorpay's signed webhook lives inside Next.js at `/api/webhooks/razorpay`. After changing deployment settings, redeploy without the previous build cache.

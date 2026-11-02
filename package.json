@@ -11,7 +11,8 @@
     "db:migrate": "pnpm --filter @repo/db exec prisma migrate deploy",
     "db:seed": "pnpm --filter @repo/db db:seed",
     "test": "pnpm --filter docs test -- --runInBand",
-    "predev": "pnpm db:generate"
+    "predev": "pnpm db:generate",
+    "vercel-build": "pnpm db:generate && pnpm --filter docs build"
   },
   "devDependencies": {
     "prettier": "^3.7.4",
